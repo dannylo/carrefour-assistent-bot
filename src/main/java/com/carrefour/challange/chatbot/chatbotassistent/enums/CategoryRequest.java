@@ -1,8 +1,9 @@
 package com.carrefour.challange.chatbot.chatbotassistent.enums;
 
+
 public enum CategoryRequest  {
 
-	BUY(1, "Compra/Pedido"),
+	BUY(1,"Compra/Pedido"),
 	CREDIT_CARD(2, "Cartão de Crédito");
 	
 	private int code;
@@ -12,4 +13,15 @@ public enum CategoryRequest  {
 		this.code = code;
 		this.description = description;
 	}
+
+	public int getCode() {
+		return code;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	
+	
 }

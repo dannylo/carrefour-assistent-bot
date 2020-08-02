@@ -1,22 +1,32 @@
 package com.carrefour.challange.chatbot.chatbotassistent.domain;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import org.apache.http.protocol.RequestDate;
+import org.springframework.jca.cci.core.InteractionCallback;
+
 import com.carrefour.challange.chatbot.chatbotassistent.enums.CategoryRequest;
+import com.carrefour.challange.chatbot.chatbotassistent.enums.DataRequest;
+import com.carrefour.challange.chatbot.chatbotassistent.enums.DataType;
 import com.carrefour.challange.chatbot.chatbotassistent.enums.TypeProblem;
+import com.carrefour.challange.chatbot.chatbotassistent.strategies.StrategyClassify;
 
 @Entity
 @Table(name = "attendance")
 public class Attendance {
 	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
 	private String protocol;
 	private LocalDateTime created;
@@ -41,6 +51,10 @@ public class Attendance {
 			 .append(random.nextInt(10))
 			 .append(random.nextInt(10))
 			 .toString();
+	}
+	
+	public void registerData(String data, StrategyClassify strategy) {
+		this.datas = strategy.execute(data);
 	}
 
 	public long getId() {
