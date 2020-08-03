@@ -11,6 +11,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.apache.http.protocol.RequestDate;
@@ -35,6 +36,8 @@ public class Attendance {
 	private String generalDescription;
 	@OneToMany(cascade ={ CascadeType.PERSIST, CascadeType.REMOVE })
 	private List<ItemData> datas;
+	@OneToOne(cascade = {CascadeType.PERSIST, CascadeType.REMOVE})
+	private Evaluation evaluation;
 	
 	public Attendance() {
 		this.created = LocalDateTime.now();
@@ -100,5 +103,15 @@ public class Attendance {
 	public String getProtocol() {
 		return protocol;
 	}
+
+	public Evaluation getEvaluation() {
+		return evaluation;
+	}
+
+	public void setEvaluation(Evaluation evaluation) {
+		this.evaluation = evaluation;
+	}
+	
+	
 	
 }

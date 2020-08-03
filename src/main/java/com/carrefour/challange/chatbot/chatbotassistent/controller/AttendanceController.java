@@ -24,8 +24,4 @@ public class AttendanceController {
 		return ResponseEntity.ok().body(service.getAll());
 	}
 	
-	@GetMapping("/today")
-	public ResponseEntity<?> getTodayAttendances(){
-		return ResponseEntity.ok().body("Estamos trabalhando nisso, calma aê :D");
-	}
 }

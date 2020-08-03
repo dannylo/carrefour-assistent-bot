@@ -10,6 +10,9 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import com.carrefour.challange.chatbot.chatbotassistent.amqp.messages.Message;
+import com.carrefour.challange.chatbot.chatbotassistent.amqp.senders.AttendanceBuyQueueSender;
+import com.carrefour.challange.chatbot.chatbotassistent.amqp.senders.AttendanceCardQueueSender;
 import com.carrefour.challange.chatbot.chatbotassistent.dialogflow.DialogFlowAgent;
 import com.carrefour.challange.chatbot.chatbotassistent.domain.Attendance;
 import com.carrefour.challange.chatbot.chatbotassistent.enums.CategoryRequest;
@@ -27,9 +30,11 @@ public class AssistenteCarrefourBot extends TelegramLongPollingBot {
 	private final String WELCOME_INTENT = "welcome_intent";
 	private final String FEEDBACK_OPINIONS_INTENT = "feedback_opinions_intent";
 	private final String REQUEST_INTENT = "request_intent";
-	private final String REQUEST_DATA_INTENT = "request_data_intent";
+	private final String REQUEST_DATA_INTENT = "request_intent_data";
 	private final String CREDIT_CARD_INTENT = "credit_card_intent";
 	private final String CREDIT_CARD_DATA_INTENT = "credit_card_data_intent";
+
+	private boolean endConversationWithDialogFlow = false;
 
 	private Attendance attendance;
 
@@ -42,6 +47,12 @@ public class AssistenteCarrefourBot extends TelegramLongPollingBot {
 	@Autowired
 	private DialogFlowAgent dialogFlowAgent;
 
+	@Autowired
+	private AttendanceBuyQueueSender queueBuySender;
+
+	@Autowired
+	private AttendanceCardQueueSender queueCardSender;
+
 	@Override
 	public void onUpdateReceived(Update update) {
 		String text = update.getMessage().getText();
@@ -49,54 +60,83 @@ public class AssistenteCarrefourBot extends TelegramLongPollingBot {
 		String response = "";
 
 		try {
-			QueryResult result = dialogFlowAgent.sendMessage(text);
-			response = result.getFulfillmentText();
-
-			switch (result.getIntent().getDisplayName()) {
-			case WELCOME_INTENT:
-				attendance = new Attendance();
-				response = new StringBuilder(result.getFulfillmentText()).append("<b>").append(attendance.getProtocol())
-						.append("</b>").append(" em que posso ajudá-lo?").toString();
-				break;
-			case FEEDBACK_OPINIONS_INTENT:
-				attendance.setTypeProblem(TypeProblem.FEEDBACK);
-				attendance.setGeneralDescription(text);
+			if (!endConversationWithDialogFlow) {
+				QueryResult result = dialogFlowAgent.sendMessage(text);
 				response = result.getFulfillmentText();
-				attendanceService.save(attendance);
-				break;
-			case REQUEST_INTENT:
-				attendance.setTypeProblem(TypeProblem.PROBLEM);
-				attendance.setCategory(CategoryRequest.BUY);
-				attendance.setGeneralDescription(text);
-				break;
-			case REQUEST_DATA_INTENT:
-				attendance.registerData(text, new RequestProblemStrategy());
-				attendanceService.save(attendance);
-				break;
-			case CREDIT_CARD_INTENT:
-				attendance.setTypeProblem(TypeProblem.PROBLEM);
-				attendance.setCategory(CategoryRequest.CREDIT_CARD);
-				attendance.setGeneralDescription(text);
-				break;
-			case CREDIT_CARD_DATA_INTENT:
-				attendance.registerData(text, new CreditCardProblemStrategy());
-				attendanceService.save(attendance);
-				break;
 
-			default:
-				break;
-			} 
+				switch (result.getIntent().getDisplayName()) {
 
-			this.sendMessage(update.getMessage().getChatId(), response);
+				case WELCOME_INTENT:
+					attendance = new Attendance();
+					response = new StringBuilder(result.getFulfillmentText()).append("<b>")
+							.append(attendance.getProtocol()).append("</b>").append(" em que posso ajudá-lo?")
+							.toString();
+					break;
+				case FEEDBACK_OPINIONS_INTENT:
+					attendance.setTypeProblem(TypeProblem.FEEDBACK);
+					attendance.setGeneralDescription(text);
+					response = result.getFulfillmentText();
+					attendanceService.save(attendance);
+					break;
+				case REQUEST_INTENT:
+					attendance.setTypeProblem(TypeProblem.PROBLEM);
+					attendance.setCategory(CategoryRequest.BUY);
+					attendance.setGeneralDescription(text);
+					break;
+				case REQUEST_DATA_INTENT:
+					System.out.println("Dados recuperados.");
+					attendance.registerData(text, new RequestProblemStrategy());
+					attendanceService.save(attendance);
+					this.queueBuySender.send(this.createMessage(attendance, update.getMessage().getChatId()));
+					System.out.println("Registrados na mensageria.");
+					endConversationWithDialogFlow = true;
+					break;
+				case CREDIT_CARD_INTENT:
+					attendance.setTypeProblem(TypeProblem.PROBLEM);
+					attendance.setCategory(CategoryRequest.CREDIT_CARD);
+					attendance.setGeneralDescription(text);
+					break;
+				case CREDIT_CARD_DATA_INTENT:
+					attendance.registerData(text, new CreditCardProblemStrategy());
+					attendanceService.save(attendance);
+					this.queueCardSender.send(this.createMessage(attendance, update.getMessage().getChatId()));
+					endConversationWithDialogFlow = true;
+					break;
+
+				default:
+					break;
+				}
+			} else {
+				Message message = this.createMessageWithText(attendance, update.getMessage().getChatId(), text);
+				if (attendance.getCategory() == CategoryRequest.BUY)
+					queueBuySender.send(message);
+				else
+					queueCardSender.send(message);
+			}
+
+			sendMessage(update.getMessage().getChatId(), response);
 
 		} catch (IOException | TelegramApiException e) {
 			e.printStackTrace();
 		}
 	}
 
-	private void sendMessage(Long chatId, String text) throws TelegramApiException {
-		SendMessage message = new SendMessage().setChatId(chatId).setText(text).enableHtml(true);
-		execute(message);
+	private Message createMessage(Attendance attendance, Long chatId) {
+		return new Message(attendance.getProtocol(), attendance.getGeneralDescription(), chatId, attendance.getDatas());
+	}
+
+	private Message createMessageWithText(Attendance attendance, Long chatId, String text) {
+		Message message = new Message(attendance.getProtocol(), attendance.getGeneralDescription(), chatId,
+				attendance.getDatas());
+		message.setDescriptionSituation(text);
+		return message;
+	}
+
+	public void sendMessage(Long chatId, String text) throws TelegramApiException {
+		if (!text.isBlank()) {
+			SendMessage message = new SendMessage().setChatId(chatId).setText(text).enableHtml(true);
+			execute(message);
+		}
 	}
 
 	@Override
