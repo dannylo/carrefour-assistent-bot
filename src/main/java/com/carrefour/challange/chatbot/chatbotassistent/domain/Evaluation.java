@@ -5,6 +5,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 
+/**
+ * Representa uma avaliação realizada ao término de cada atendimento.
+ * */
 @Entity
 public class Evaluation {
 	

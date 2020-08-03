@@ -6,6 +6,4 @@ import org.springframework.stereotype.Repository;
 import com.carrefour.challange.chatbot.chatbotassistent.domain.Evaluation;
 
 @Repository
-public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
-
-}
+public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {}

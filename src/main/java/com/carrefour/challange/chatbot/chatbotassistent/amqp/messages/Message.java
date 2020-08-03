@@ -5,6 +5,9 @@ import java.util.List;
 
 import com.carrefour.challange.chatbot.chatbotassistent.domain.ItemData;
 
+/**
+ * Representa uam mensagem a que será trocada pelos elementos que interagem com a solução.
+ * */
 public class Message {
 
 	private Long id;
@@ -30,10 +33,6 @@ public class Message {
 
 	public Long getId() {
 		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
 	}
 
 	public String getProtocolAttendance() {

@@ -16,21 +16,21 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import org.apache.http.protocol.RequestDate;
 import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
-import org.springframework.jca.cci.core.InteractionCallback;
 
 import com.carrefour.challange.chatbot.chatbotassistent.enums.AttendanceStatus;
 import com.carrefour.challange.chatbot.chatbotassistent.enums.CategoryRequest;
-import com.carrefour.challange.chatbot.chatbotassistent.enums.DataRequest;
-import com.carrefour.challange.chatbot.chatbotassistent.enums.DataType;
 import com.carrefour.challange.chatbot.chatbotassistent.enums.TypeProblem;
 import com.carrefour.challange.chatbot.chatbotassistent.strategies.StrategyClassify;
 
+/**
+ * Representa um atendimento realizado pelo chatbot + Grupo Carrefour.
+ * */
 @Entity
 @Table(name = "attendance")
 public class Attendance {
+	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
@@ -53,18 +53,24 @@ public class Attendance {
 		this.generateProtocol();
 	}
 	
+	/**
+	 * Gera um protocolo único utilizando combinações de campos e números randômicos.
+	 * */
 	private void generateProtocol() {
 		Random random = new Random();
 		StringBuilder build = new StringBuilder("");
 		this.protocol = build.append(this.created.getYear())
 			 .append(created.getDayOfMonth())
 			 .append(id)
-			 .append(random.nextInt(10))
-			 .append(random.nextInt(10))
-			 .append(random.nextInt(10))
+			 .append(random.nextInt(9))
+			 .append(random.nextInt(9))
+			 .append(random.nextInt(9))
 			 .toString();
 	}
 	
+	/**
+	 * Executa alguma estratégia para separação dos dados enviados do telegram.
+	 * */
 	public void registerData(String data, StrategyClassify strategy) {
 		this.datas = strategy.execute(data);
 	}

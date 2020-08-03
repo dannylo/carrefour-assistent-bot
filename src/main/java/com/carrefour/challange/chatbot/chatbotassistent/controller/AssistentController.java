@@ -9,10 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class AssistentController {
 
 	@GetMapping
-	public ResponseEntity<?> hello(){
-		
-		
-		return ResponseEntity.ok("Hello, welcome to the Carrefour Assistent API, we're listening the Telegram API o/");
+	public ResponseEntity<?> hello(){	
+		return ResponseEntity.ok("Hello, welcome to the Carrefour Assistent API, enjoy it! o/");
 	}
 	
 }

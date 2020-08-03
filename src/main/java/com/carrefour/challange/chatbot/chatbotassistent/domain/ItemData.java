@@ -5,8 +5,10 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 
-import com.carrefour.challange.chatbot.chatbotassistent.enums.DataType;
-
+/**
+ * Dados que são selecionados pela ML do DialogFlow para otimizar o trabalho do atendente de suporte.
+ * os dados precisam de uma estratégia para serem extraídos.
+ * */
 @Entity
 public class ItemData {
 

@@ -18,6 +18,9 @@ import com.google.cloud.dialogflow.v2.SessionsClient;
 import com.google.cloud.dialogflow.v2.SessionsSettings;
 import com.google.cloud.dialogflow.v2.TextInput;
 
+/**
+ * Responsável por conectar a solução à API do DialogFlow.
+ * */
 @Component
 public class DialogFlowAgent {
 	
