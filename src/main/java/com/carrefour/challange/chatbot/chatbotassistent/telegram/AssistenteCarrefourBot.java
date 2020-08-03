@@ -70,6 +70,7 @@ public class AssistenteCarrefourBot extends TelegramLongPollingBot {
 			if (!endConversationWithDialogFlow) {
 				response = processDialogFlowIntents(update, text);
 			} else {
+
 				attendance = attendanceService.getByProtocol(this.attendance.getProtocol());
 				if(attendance != null && 
 						attendance.getStatus() == AttendanceStatus.FINISHED) {
@@ -82,7 +83,7 @@ public class AssistenteCarrefourBot extends TelegramLongPollingBot {
 					sendMessage(update.getMessage().getChatId(), "Agradecemos sua avaliação. Tenha um ótimo dia!");
 					this.endConversationWithDialogFlow = false;
 				}
-				
+				System.out.println(text);
 				this.sendMessageToQueues(this.createMessageWithText(attendance, update.getMessage().getChatId(), text));
 			}
 			
@@ -154,7 +155,7 @@ public class AssistenteCarrefourBot extends TelegramLongPollingBot {
 	private Message createMessageWithText(Attendance attendance, Long chatId, String text) {
 		Message message = new Message(attendance.getProtocol(), attendance.getGeneralDescription(), chatId,
 				attendance.getDatas());
-		message.setDescriptionSituation(text);
+		message.setMessageDescription(text);
 		return message;
 	}
 
