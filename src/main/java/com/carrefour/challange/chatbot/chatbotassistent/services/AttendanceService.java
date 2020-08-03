@@ -26,4 +26,5 @@ public class AttendanceService {
 		return this.repository.findByProtocol(protocol);
 	}
 	
+	
 }
