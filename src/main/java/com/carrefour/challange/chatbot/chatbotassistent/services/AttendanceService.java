@@ -22,4 +22,8 @@ public class AttendanceService {
 		return this.repository.findAll();
 	}
 	
+	public Attendance getByProtocol(String protocol) {
+		return this.repository.findByProtocol(protocol);
 	}
+	
+}

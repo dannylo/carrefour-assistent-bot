@@ -11,7 +11,6 @@ public class ItemDataDTO {
 	}
 	
 	public ItemDataDTO() {
-		// TODO Auto-generated constructor stub
 	}
 
 	public String getDataType() {

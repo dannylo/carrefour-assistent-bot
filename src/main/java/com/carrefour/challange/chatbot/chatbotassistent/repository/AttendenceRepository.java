@@ -7,4 +7,7 @@ import org.springframework.stereotype.Repository;
 import com.carrefour.challange.chatbot.chatbotassistent.domain.Attendance;
 
 @Repository
-public interface AttendenceRepository extends JpaRepository<Attendance, Long> {}
+public interface AttendenceRepository extends JpaRepository<Attendance, Long> {
+	
+	Attendance findByProtocol(String protocol);
+}

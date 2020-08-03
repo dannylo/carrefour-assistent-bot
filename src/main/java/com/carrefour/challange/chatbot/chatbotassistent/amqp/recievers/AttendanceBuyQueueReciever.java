@@ -8,6 +8,9 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import com.carrefour.challange.chatbot.chatbotassistent.amqp.messages.Message;
+import com.carrefour.challange.chatbot.chatbotassistent.domain.Attendance;
+import com.carrefour.challange.chatbot.chatbotassistent.enums.AttendanceStatus;
+import com.carrefour.challange.chatbot.chatbotassistent.services.AttendanceService;
 import com.carrefour.challange.chatbot.chatbotassistent.telegram.AssistenteCarrefourBot;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,12 +27,18 @@ public class AttendanceBuyQueueReciever {
 	
 	@Autowired
 	private AssistenteCarrefourBot bot;
+	
+	@Autowired
+	private AttendanceService service;
 
 	private void verifyAttendanceAttached(Message message) {
 		StringBuilder builder = new StringBuilder();
 		builder.append("Olá, me chamo ").append(message.getAttendant())
 			.append(" estou analisando os dados que você nos passou e já resolvo seu problema.");
 		if(message.getMessageDescription().equals(ATTACHED)) {
+			Attendance attendance = service.getByProtocol(message.getProtocolAttendance());
+			attendance.setStatus(AttendanceStatus.ATTACHED);
+			service.save(attendance);
 			message.setMessageDescription(builder.toString());
 		}
 	}
@@ -40,7 +49,11 @@ public class AttendanceBuyQueueReciever {
 				+ "que o seu problema tenha sido solucionado e não volte a correr. Para "
 				+ "melhorarmos cada vez mais nossos serviços você poderia avaliar esse atendimento?"
 				+ "Se sim, em nível de satisfação, nos dê uma nota de 0 a 10.");
+		
 		if(message.getMessageDescription().equals(FINISHED)) {
+			Attendance attendance = service.getByProtocol(message.getProtocolAttendance());
+			attendance.setStatus(AttendanceStatus.FINISHED);
+			service.save(attendance);
 			message.setMessageDescription(builder.toString());
 		}
 		

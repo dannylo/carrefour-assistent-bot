@@ -7,6 +7,8 @@ import java.util.Random;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -15,8 +17,11 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.apache.http.protocol.RequestDate;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 import org.springframework.jca.cci.core.InteractionCallback;
 
+import com.carrefour.challange.chatbot.chatbotassistent.enums.AttendanceStatus;
 import com.carrefour.challange.chatbot.chatbotassistent.enums.CategoryRequest;
 import com.carrefour.challange.chatbot.chatbotassistent.enums.DataRequest;
 import com.carrefour.challange.chatbot.chatbotassistent.enums.DataType;
@@ -35,11 +40,15 @@ public class Attendance {
 	private CategoryRequest category;
 	private String generalDescription;
 	@OneToMany(cascade ={ CascadeType.PERSIST, CascadeType.REMOVE })
+	@LazyCollection(LazyCollectionOption.FALSE)
 	private List<ItemData> datas;
-	@OneToOne(cascade = {CascadeType.PERSIST, CascadeType.REMOVE})
+	@OneToOne(cascade = {CascadeType.PERSIST, CascadeType.REMOVE, CascadeType.MERGE})
 	private Evaluation evaluation;
+	@Enumerated(EnumType.STRING)
+	private AttendanceStatus status;
 	
 	public Attendance() {
+		this.status = AttendanceStatus.PENDENT;
 		this.created = LocalDateTime.now();
 		this.generateProtocol();
 	}
@@ -111,6 +120,15 @@ public class Attendance {
 	public void setEvaluation(Evaluation evaluation) {
 		this.evaluation = evaluation;
 	}
+
+	public AttendanceStatus getStatus() {
+		return status;
+	}
+
+	public void setStatus(AttendanceStatus status) {
+		this.status = status;
+	}
+	
 	
 	
 	

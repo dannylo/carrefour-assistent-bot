@@ -15,6 +15,8 @@ import com.carrefour.challange.chatbot.chatbotassistent.amqp.senders.AttendanceB
 import com.carrefour.challange.chatbot.chatbotassistent.amqp.senders.AttendanceCardQueueSender;
 import com.carrefour.challange.chatbot.chatbotassistent.dialogflow.DialogFlowAgent;
 import com.carrefour.challange.chatbot.chatbotassistent.domain.Attendance;
+import com.carrefour.challange.chatbot.chatbotassistent.domain.Evaluation;
+import com.carrefour.challange.chatbot.chatbotassistent.enums.AttendanceStatus;
 import com.carrefour.challange.chatbot.chatbotassistent.enums.CategoryRequest;
 import com.carrefour.challange.chatbot.chatbotassistent.enums.TypeProblem;
 import com.carrefour.challange.chatbot.chatbotassistent.services.AttendanceService;
@@ -61,58 +63,75 @@ public class AssistenteCarrefourBot extends TelegramLongPollingBot {
 
 		try {
 			if (!endConversationWithDialogFlow) {
+				System.out.println("Lets do, DF");
 				QueryResult result = dialogFlowAgent.sendMessage(text);
 				response = result.getFulfillmentText();
 
 				switch (result.getIntent().getDisplayName()) {
 
-				case WELCOME_INTENT:
-					attendance = new Attendance();
-					response = new StringBuilder(result.getFulfillmentText()).append("<b>")
-							.append(attendance.getProtocol()).append("</b>").append(" em que posso ajudá-lo?")
-							.toString();
-					break;
-				case FEEDBACK_OPINIONS_INTENT:
-					attendance.setTypeProblem(TypeProblem.FEEDBACK);
-					attendance.setGeneralDescription(text);
-					response = result.getFulfillmentText();
-					attendanceService.save(attendance);
-					break;
-				case REQUEST_INTENT:
-					attendance.setTypeProblem(TypeProblem.PROBLEM);
-					attendance.setCategory(CategoryRequest.BUY);
-					attendance.setGeneralDescription(text);
-					break;
-				case REQUEST_DATA_INTENT:
-					System.out.println("Dados recuperados.");
-					attendance.registerData(text, new RequestProblemStrategy());
-					attendanceService.save(attendance);
-					this.queueBuySender.send(this.createMessage(attendance, update.getMessage().getChatId()));
-					System.out.println("Registrados na mensageria.");
-					endConversationWithDialogFlow = true;
-					break;
-				case CREDIT_CARD_INTENT:
-					attendance.setTypeProblem(TypeProblem.PROBLEM);
-					attendance.setCategory(CategoryRequest.CREDIT_CARD);
-					attendance.setGeneralDescription(text);
-					break;
-				case CREDIT_CARD_DATA_INTENT:
-					attendance.registerData(text, new CreditCardProblemStrategy());
-					attendanceService.save(attendance);
-					this.queueCardSender.send(this.createMessage(attendance, update.getMessage().getChatId()));
-					endConversationWithDialogFlow = true;
-					break;
-
-				default:
-					break;
+					case WELCOME_INTENT:
+						attendance = new Attendance();
+						response = new StringBuilder(result.getFulfillmentText()).append("<b>")
+								.append(attendance.getProtocol()).append("</b>").append(" em que posso ajudá-lo?")
+								.toString();
+						break;
+					case FEEDBACK_OPINIONS_INTENT:
+						attendance.setTypeProblem(TypeProblem.FEEDBACK);
+						attendance.setGeneralDescription(text);
+						response = result.getFulfillmentText();
+						attendanceService.save(attendance);
+						break;
+					case REQUEST_INTENT:
+						attendance.setTypeProblem(TypeProblem.PROBLEM);
+						attendance.setCategory(CategoryRequest.BUY);
+						attendance.setGeneralDescription(text);
+						break;
+					case REQUEST_DATA_INTENT:
+						System.out.println("Dados recuperados.");
+						attendance.registerData(text, new RequestProblemStrategy());
+						attendanceService.save(attendance);
+						this.queueBuySender.send(this.createMessage(attendance, update.getMessage().getChatId()));
+						System.out.println("Registrados na mensageria.");
+						endConversationWithDialogFlow = true;
+						break;
+					case CREDIT_CARD_INTENT:
+						attendance.setTypeProblem(TypeProblem.PROBLEM);
+						attendance.setCategory(CategoryRequest.CREDIT_CARD);
+						attendance.setGeneralDescription(text);
+						break;
+					case CREDIT_CARD_DATA_INTENT:
+						attendance.registerData(text, new CreditCardProblemStrategy());
+						attendanceService.save(attendance);
+						this.queueCardSender.send(this.createMessage(attendance, update.getMessage().getChatId()));
+						endConversationWithDialogFlow = true;
+						break;
+	
+					default:
+						break;
 				}
 			} else {
+				attendance = attendanceService.getByProtocol(this.attendance.getProtocol());
+				if(attendance != null && 
+						attendance.getStatus() == AttendanceStatus.FINISHED) {
+					System.out.println(text);
+					int valueSatisfaction = Integer.parseInt(text.trim());//
+					System.out.println(valueSatisfaction);
+					Evaluation evaluation = new Evaluation();
+					evaluation.setProtocolAttendance(attendance.getProtocol());
+					evaluation.setSatisfactionValue(valueSatisfaction);
+					attendance.setEvaluation(evaluation);
+					attendanceService.save(attendance);
+					sendMessage(update.getMessage().getChatId(), "Agradecemos sua avaliação. Tenha um ótimo dia!");
+					this.endConversationWithDialogFlow = false;
+				}
 				Message message = this.createMessageWithText(attendance, update.getMessage().getChatId(), text);
 				if (attendance.getCategory() == CategoryRequest.BUY)
 					queueBuySender.send(message);
 				else
 					queueCardSender.send(message);
 			}
+			
+
 
 			sendMessage(update.getMessage().getChatId(), response);
 
